@@ -1,5 +1,5 @@
 {
-    "name": "sonawap/slash",
+    "name": "sonawap/laravel-slash",
     "description": "Laravel discount, integrate discount and coupon toyour laravel app",
     "type": "package",
     "autoload": {

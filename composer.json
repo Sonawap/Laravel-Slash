@@ -1,6 +1,6 @@
 {
     "name": "sonawap/laravel-slash",
-    "description": "Laravel discount, integrate discount and coupon toyour laravel app",
+    "description": "Laravel discount, integrate discount and coupon to your laravel app",
     "type": "package",
     "keywords": ["laravel", "discount", "coupon", "shopping", "e-commerce"],
     "license": "MIT",

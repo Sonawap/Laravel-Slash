@@ -1,6 +1,13 @@
-## Note
+# Laravel Slash
+Provide discount and coupon service to your webapp
 
-This package is still in it development phase, do not use for now
-## License
+## To install run
+```bash
+composer require sonawap/laravel-slash
+```
 
-Laravel Sanctum is open-sourced software licensed under the [MIT license](LICENSE.md).
+## Run migration
+```bash
+php artisan migrate
+```
+

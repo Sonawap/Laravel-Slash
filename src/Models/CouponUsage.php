@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CouponUsage extends Model
 {
-    protected $table = 'slash_coupons_usage';
+    protected $table = 'slash_coupon_usages';
     use HasFactory;
     use UuidTrait;
     use SoftDeletes;

@@ -9,24 +9,13 @@ use Sonawap\Slash\Models\CouponUsage;
 
 class SlashCoupon
 {
-    public $model_usage;
-    public $model_id;
-    public $code;
-    public $total_price;
-
-    public function __construct($model_usage, $model_id, $code, $total_price){
-        $this->model_usage = $model_usage;
-        $this->code = $code;
-        $this->model_id = $model_id;
-        $this->total_price = $total_price;
-    }
     /**
      * return all coupons
      *
      * @return array
     */
-    public function index(){
-        $coupons = Coupon::with('discounts')->latest()->get();
+    public static function allCoupons(){
+        $coupons = Coupon::with('discount')->latest()->get();
         return $coupons;
     }
 
@@ -35,9 +24,20 @@ class SlashCoupon
      *
      * @return object
     */
-    public function show($id){
-        $coupon= Coupon::with('discounts')->findOrFail($id);
+    public static function showCoupon($id){
+        $coupon= Coupon::with('discount')->findOrFail($id);
         return $coupon;
+    }
+
+    /**
+     * return a string
+     *
+     * @return string
+    */
+    public static function deleteCoupon($id){
+        $coupon= Coupon::findOrFail($id);
+        $coupon->delete();
+        return "Coupon deleted successfully";
     }
 
     /**
@@ -45,9 +45,9 @@ class SlashCoupon
      *
      * @return string
     */
-    public function getByCode($code){
+    public static function getCouponByCode($code){
         //check if code is validate
-        $code = Coupon::where('code', $code)->first();
+        $code = Coupon::with('discount')->where('code', $code)->first();
 
         if(!$code){
             return 'Coupon does not exists';
@@ -57,14 +57,53 @@ class SlashCoupon
     }
 
     /**
+     * create a coupon
+     *
+     * @return object
+    */
+    public static function createCoupon($discount_id, $code){
+        $coupon = Coupon::checkIfCouponExistsByCode($code);
+        if($coupon){
+            return 'Coupon Code is aleady generated';
+        }
+
+        try {
+            $discount = Discount::checkIfDiscountExistsById($discount_id);
+            return Coupon::createdCoupon($discount, $code);
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+    }
+
+    /**
+     * update a coupon
+     *
+     * @return object
+    */
+    public static function updateCoupon($discount_id, $code, $coupon_id){
+        $coupon = Coupon::checkIfCouponExistsById($coupon_id);
+
+        if(!$coupon){
+            return 'Coupon code does not exists';
+        }
+
+        try {
+            $discount = Discount::checkIfDiscountExistsById($discount_id);
+            return Coupon::updateCoupon($discount, $code, $coupon);
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+    }
+
+    /**
      * use a coupon
      *
      * @return object
     */
-    public function useCoupon(){
+    public static function useCoupon($model_usage, $model_id, $code, $total_price){
 
         //check if code is valid
-        $code = Coupon::where('code', $this->code)->first();
+        $code = Coupon::checkIfCouponExistsByCode($code);
 
 
         if(!$code){
@@ -72,8 +111,8 @@ class SlashCoupon
         }
 
         //check if coupon has already been used for the product by the user
-        $checkUsage = CouponUsage::where('model_usage', $this->model)
-            ->where('user_id', $this->model_id)
+        $checkUsage = CouponUsage::where('model_usage', $model_usage)
+            ->where('model_id', $model_id)
             ->where('coupon_id', $code->id)
             ->exists();
         if($checkUsage){
@@ -99,27 +138,27 @@ class SlashCoupon
             return 'Sorry, Coupon has exceed maximum usage';
         }
 
-        if($discount->checkIfDiscountHasNotExceedMaxForModel($code, $this->model_id, $this->model_usage)){
+        if($discount->checkIfDiscountHasNotExceedMaxForModel($code, $model_id, $model_usage)){
             return 'Sorry, model has exceed the maximum usage for this coupon';
         }
 
 
         try {
             $saveUsage = new CouponUsage();
-            $saveUsage->model_usage = $this->model_usage;
-            $saveUsage->model_id = $this->model_id;
+            $saveUsage->model_usage = $model_usage;
+            $saveUsage->model_id = $model_id;
             $saveUsage->coupon_id = $code->id;
 
             if($saveUsage->save()){
                 if(strval($discount->offer_type) === '1'){
-                    $price_after_coupon = $this->total_price - $discount->off_value;
+                    $price_after_coupon = $total_price - $discount->off_value;
                     if($price_after_coupon < 0){
                         return 0;
                     }
                     return $price_after_coupon;
                 }
                 else if(strval($discount->offer_type) == '2'){
-                    $price_after_coupon = $this->calculatePercentage($discount->off_value, $this->total_price);
+                    $price_after_coupon = Coupon::calculatePercentage($discount->off_value, $total_price);
                     if($price_after_coupon < 0){
                         return 0;
                     }
@@ -134,9 +173,4 @@ class SlashCoupon
         }
     }
 
-    public function calculatePercentage($percent, $actualNumber){
-        $count = ($percent / 100) * $actualNumber;
-        $amount = $actualNumber - $count;
-        return $amount;
-    }
 }

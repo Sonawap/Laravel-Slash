@@ -17,7 +17,7 @@ class Discount extends Model
     /*
         Set table
     */
-    protected $table = 'coupons';
+    protected $table = 'slash_discounts';
 
     /**
      * Set the coupon discount relationship.
@@ -81,6 +81,86 @@ class Discount extends Model
             }
         }else{
             return false;
+        }
+    }
+
+    public static function checkIfDiscountExistsById($discount_id){
+        $discount = Discount::where('id', $discount_id)->first();
+        if($discount){
+            return $discount;
+        }else{
+            return null;
+        }
+    }
+
+    public static function checkIfDiscountExistsByName($name){
+        $discount = Discount::where('name', $name)->first();
+        if($discount){
+            return $discount;
+        }else{
+            return null;
+        }
+    }
+
+    public static function createDiscount(
+        $name,
+        $assigned_to,
+        $scope,
+        $offer_type,
+        $off_value,
+        $max_usage,
+        $max_usage_per_model,
+        $start_date,
+        $end_date
+    ){
+        try {
+            $discount = new Discount();
+            $discount->name = $name;
+            $discount->assigned_to = $assigned_to;
+            $discount->scope = $scope;
+            $discount->offer_type = $offer_type;
+            $discount->off_value = $off_value;
+            $discount->max_usage = $max_usage;
+            $discount->max_usage_per_model = $max_usage_per_model;
+            $discount->start_date = $start_date ?? now();
+            $discount->end_date = $end_date ?? now()->addMonths(3);
+
+            $discount->save();
+
+            return $discount;
+        } catch (\Throwable $th) {
+            return $th->getMessage();
+        }
+    }
+
+    public static function updateDiscount(
+        $name,
+        $assigned_to,
+        $scope,
+        $offer_type,
+        $off_value,
+        $max_usage,
+        $max_usage_per_model,
+        $start_date,
+        $end_date,
+        Discount $discount
+    ){
+        try {
+            $discount->name = $name ?? $discount->name;
+            $discount->assigned_to = $assigned_to ?? $discount->assign_to;
+            $discount->scope = $scope ?? $discount->scope;
+            $discount->offer_type = $offer_type ?? $discount->offer_type;
+            $discount->off_value = $off_value ?? $discount->off_value;
+            $discount->max_usage = $max_usage ?? $discount->max_usage;
+            $discount->max_usage_per_model = $max_usage_per_model ?? $discount->max_usage_per_model;
+            $discount->start_date = $start_date ?? $discount->start_date;
+            $discount->end_date = $end_date ?? $discount->end_date;
+
+            $discount->save();
+
+            return $discount;
+        } catch (\Throwable $th) {
+            return $th->getMessage();
         }
     }
 
